@@ -1,0 +1,49 @@
+
+services:
+  occupancy:
+    build:
+      context: ..           
+      dockerfile: docker/occupancy.dockerfile
+    volumes:
+      - ../src/occupancy_package:/NERF_ws/src/occupancy_package
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - ROS_DOMAIN_ID=5
+    command: tail -f /dev/null
+    network_mode: host
+    ports:
+      - "8765:8765"
+
+  seg:
+    build:
+      context: ..           
+      dockerfile: docker/seg.dockerfile
+    volumes:
+      - ../src/seg_package:/NERF_ws/src/seg_package
+    command: tail -f /dev/null
+    environment:
+      - ROS_DOMAIN_ID=5
+    network_mode: host
+    ports:
+      - "8765:8765"
+
+  path_planner:
+    build:
+      context: ..           
+      dockerfile: docker/path_planner.dockerfile
+    volumes:
+      - ../src/path_planner_package:/NERF_ws/src/path_planner_package
+    command: tail -f /dev/null
+    environment:
+      - ROS_DOMAIN_ID=5
+    network_mode: host
+    ports:
+      - "8765:8765"
+
+
+networks:
+  ros_network:
+    driver: bridge
+  foxglove_net:
+    driver: bridge
