@@ -1,5 +1,5 @@
 trainer:
   workspace: "${MODEL_WEIGHTS_PATH}"
   criterion: 10
-  fp16: True
+  fp16: Falsbe
   use_checkpoint: "latest_model"

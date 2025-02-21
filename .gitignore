@@ -1,4 +1,4 @@
-**/checkpoints/*.pth
+/nerf_weights/
 /build/
 /install/
 /log/
