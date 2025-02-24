@@ -23,9 +23,3 @@ services:
               tail -f /dev/null"
 
     network_mode: host
-
-# networks:
-#   ros_network:
-#     driver: bridge
-#   foxglove_net:
-#     driver: bridge
