@@ -20,43 +20,38 @@ class PathPlannerNode(Node):
         super().__init__('path_planner_service')
         
         # Subscriber for occupancy grid
-        # self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'occupancy_grid_topic', self.occupancy_grid_callback, 10)
+        self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'occupancy_grid_topic', self.get_occupancy_grid, 10)
         
         # Service Server to publish path to controller (with start, goal, and headding parameters)
-        self.serv = self.create_service(GetPlan, 'get_path', self.get_path_callback)
+        self.service = self.create_service(GetPlan, 'get_path', self.get_path_callback)
 
-    # Function to visualise occ. grid and path with matplotlib
-    def visualize_path(self, grid, path, start, goal):
-        plt.imshow(grid, cmap='gray', origin='lower')
-        plt.plot(start[1], start[0], 'ro', markersize=10)
-        plt.plot(goal[1], goal[0], 'go', markersize=10)
+        # Object to store occupancy grid
+        self.grid = None
 
-        path = np.array(path)
-        plt.plot(path[:, 0], path[:, 1], 'b-', linewidth=2)
-        
-        plt.grid(True)
-        plt.show()
-   
+    def get_occupancy_grid(self, msg):
+        # Get grid from subscription
+        width, height = msg.info.width, msg.info.height
+        data = np.array(msg.data).reshaper((height, width))
+        self.grid = np.where(data == -1, 100, data)  # Replace unknown (-1) with high cost (100)
+        self.get_logger().info('Occupancy grid received')
 
     def get_path_callback(self, request, response):
-        # Get grid from subscription
-        # grid = np.array(msg.data).reshape(msg.info.height, msg.info.width) # Convert occupancy grid to numpy array
         
         # Empty grid
         # grid = np.zeros((10, 10))
         
         # # "Grid with box in middle"
-        grid = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-                        [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-                        [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-                        [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        ])
+        # grid = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 ])
         
         # Get start and goal from service client
         start = (float(request.start.pose.position.x), float(request.start.pose.position.y))
@@ -65,7 +60,7 @@ class PathPlannerNode(Node):
         self.get_logger().info(f'-------------Recived Path request from current position: {start} to goal: {goal}-------------')
         
         # Get path: Run path planner on grid
-        path = path_planner(grid, start, goal) # Other Params (set to default): max_iter, step_size, goal_sample_rate, radius)
+        path = path_planner(self.grid, start, goal) # Other Params (set to default): max_iter, step_size, goal_sample_rate, radius)
 
         # Create Response and Response plan (path) objects
         response = GetPlan.Response()
@@ -85,10 +80,7 @@ class PathPlannerNode(Node):
                 pose.pose.position.z = 0.0
 
                 response.plan.poses.append(pose)
-
-        # visualize the path
-        self.visualize_path(grid, path, start, goal)
-            
+         
         return response
 
 def main(args=None):

@@ -33,18 +33,23 @@ class PathPlannerNode(Node):
         self.path_published = False
 
         # Subscriber for occupancy grid
-        # self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'occupancy_grid_topic', self.occupancy_grid_callback, 10)
+        self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'occupancy_grid_topic', self.get_occupancy_grid, 10)
 
-    def visualize_path(self, grid, path, start, goal):
-        plt.imshow(grid, cmap='gray', origin='lower')
-        plt.plot(start[1], start[0], 'ro', markersize=10)
-        plt.plot(goal[1], goal[0], 'go', markersize=10)
+        # Object to store occupancy grid
+        self.grid = None
 
-        path = np.array(path)
-        plt.plot(path[:, 0], path[:, 1], 'b-', linewidth=2)
+    def get_occupancy_grid(self, msg):
+        # Get grid from subscription
+        width, height = msg.info.width, msg.info.height
+        data = np.array(msg.data).reshape((height, width))
+
+        if not self.grid:
+            self.get_logger().error('No Occupancy Grid Received')
+            return
         
-        plt.grid(True)
-        plt.show()
+        self.grid = np.where(data == -1, 100, data)  # Replace unknown (-1) with high cost (100)
+        self.get_logger().info('Occupancy grid received')
+
 
     def path_publisher_callback(self): #msg):
         
@@ -55,24 +60,24 @@ class PathPlannerNode(Node):
         # grid = np.zeros((10, 10)) # Example grid
         
         # "Env with Box in Middle"
-        grid = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-                        [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-                        [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-                        [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        ])
+        # grid = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                 ])
 
         # Set to disable user input
         start = (0, 0) 
         goal = (9, 9)
 
         # Call path planner to create path
-        path = path_planner(grid, start, goal) # Other Params (set to default) max_iter=100000, step_size=1.0, goal_sample_rate=0.3, radius=2.0)
+        path = path_planner(self.grid, start, goal) # Other Params (set to default) max_iter=100000, step_size=1.0, goal_sample_rate=0.3, radius=2.0)
 
         if path:
             path_msg = Path()
@@ -91,8 +96,8 @@ class PathPlannerNode(Node):
             self.path_publisher_.publish(path_msg)
 
             # visualize the path
-            self.visualize_path(grid, path, start, goal)
             self.path_published = True
+
 
 def main(args=None):
     rclpy.init(args=args)

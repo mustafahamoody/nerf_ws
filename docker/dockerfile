@@ -7,6 +7,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Set basic locale environment variables (ROS2 requires UTF-8)
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
+ENV CUDA_HOME='/usr/local/cuda' 
 
 # Install basic tools needed to add the ROS repository
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -89,7 +90,7 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-in
 # Set environment variables for configuration file paths (if needed)
 ENV MODEL_CONFIG_PATH=${WORKSPACE}/src/occupancy_package/occupancy_package/config/model_config.yaml
 ENV TRAINER_CONFIG_PATH=${WORKSPACE}/src/occupancy_package/occupancy_package/config/trainer_config.yaml
-ENV MODEL_WEIGHTS_PATH=${WORKSPACE}/nerf_weights/stone_nerf
+ENV MODEL_WEIGHTS_PATH=${WORKSPACE}/data/stone_nerf
 ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # Set a fixed directory for Torch extensions and create it

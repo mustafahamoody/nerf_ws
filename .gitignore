@@ -1,4 +1,6 @@
-/nerf_weights/
+/data/
 /build/
 /install/
 /log/
+__pycache__/
+*.pyc

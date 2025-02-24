@@ -22,35 +22,7 @@ services:
               ros2 run seg_package seg_node & \
               tail -f /dev/null"
 
-    # network_mode: host
-
-#   seg:
-#     build:
-#       context: ..           
-#       dockerfile: docker/seg.dockerfile
-#     volumes:
-#       - ../src/seg_package:/nerf_ws/src/seg_package
-#     command: bash -c " ros2 run seg_package seg_node & tail -f /dev/null"
-#     environment:
-#       - ROS_DOMAIN_ID=5
-#       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-#       - DISPLAY=${DISPLAY} # Set the display to the host display
-
-#     network_mode: host
-
-#   path_planner:
-#     build:
-#       context: ..           
-#       dockerfile: docker/path_planner.dockerfile
-#     volumes:
-#       - ../src/path_planner_package:/nerf_ws/src/path_planner_package
-#     command: bash -c "ros2 run path_planner_package path_planner_node & tail -f /dev/null"
-#     environment:
-#       - ROS_DOMAIN_ID=5
-#       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-#       - DISPLAY=${DISPLAY} # Set the display to the host display
-
-#     network_mode: host
+    network_mode: host
 
 # networks:
 #   ros_network:
