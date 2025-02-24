@@ -6,7 +6,7 @@ from geometry_msgs.msg import PoseStamped, Twist
 
 import numpy as np
 
-from controller.control_logic import RobotController # Import controller logic
+from controller_package.control_logic import RobotController # Import controller logic
 
 class ControllerNode(Node):
     def __init__(self):
