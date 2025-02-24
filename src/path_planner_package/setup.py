@@ -13,14 +13,15 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='kishorey',
-    maintainer_email='kishore.yogaraj@gmail.com',
+    maintainer='mustafa',
+    maintainer_email='mustafa.a.hamoody@gmail.com',
     description='TODO: Package description',
-    license='MIT',
+    license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'path_planner_node = path_planner_package.path_planner_node:main'
+            'path_planner_node = path_planner_package.path_planner_node:main',
+            'path_planner_server = path_planner_package.path_planner_server:main',
         ],
     },
 )

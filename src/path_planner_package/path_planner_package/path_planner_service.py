@@ -3,7 +3,8 @@ from rclpy.node import Node
 import numpy as np
 import matplotlib.pyplot as plt
 
-from nav_msgs.msg import OccupancyGrid
+from nav_msgs.msg import OccupancyGrid # For Subscription
+from nav_msgs.srv import GetPlan # For Service and Path Publishing
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 
@@ -11,30 +12,20 @@ from geometry_msgs.msg import PoseStamped
 from path_planner_package.path_planners.path_planner_Astar import a_star
 from path_planner_package.path_planners.path_planner_RRTstar import rrt_star
 
-# # Get start and goal positions from user
-# start = input("Enter start location x, y: ").strip() or "0, 0"
-# start = tuple(map(int, start.split(',')))
+path_planner = rrt_star # Choose Path Planner to use: a_star (A*) or rrt_star (RRT*)
 
-# goal = input("Enter goal location x, y: ").strip() or "9, 9"
-# goal = tuple(map(int, goal.split(',')))
-
-
-# Choose Path Planner to use: a_star (A*) or rrt_star (RRT*)
-path_planner = rrt_star
 
 class PathPlannerNode(Node):
     def __init__(self):
-        super().__init__('path_planner_node')
+        super().__init__('path_planner_service')
         
-        # Publisher for path
-        self.path_publisher_ = self.create_publisher(Path, 'path', 10)
-        self.path_timer = self.create_timer(1.0, self.path_publisher_callback)
-        # Make sure path is published only once
-        self.path_published = False
-
         # Subscriber for occupancy grid
         # self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'occupancy_grid_topic', self.occupancy_grid_callback, 10)
+        
+        # Service Server to publish path to controller (with start, goal, and headding parameters)
+        self.serv = self.create_service(GetPlan, 'get_path', self.get_path_callback)
 
+    # Function to visualise occ. grid and path with matplotlib
     def visualize_path(self, grid, path, start, goal):
         plt.imshow(grid, cmap='gray', origin='lower')
         plt.plot(start[1], start[0], 'ro', markersize=10)
@@ -45,16 +36,16 @@ class PathPlannerNode(Node):
         
         plt.grid(True)
         plt.show()
+   
 
-    def path_publisher_callback(self): #msg):
-        
-        if self.path_published == True:
-            return
-        
+    def get_path_callback(self, request, response):
+        # Get grid from subscription
         # grid = np.array(msg.data).reshape(msg.info.height, msg.info.width) # Convert occupancy grid to numpy array
-        # grid = np.zeros((10, 10)) # Example grid
         
-        # "Env with Box in Middle"
+        # Empty grid
+        # grid = np.zeros((10, 10))
+        
+        # # "Grid with box in middle"
         grid = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -66,39 +57,45 @@ class PathPlannerNode(Node):
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         ])
+        
+        # Get start and goal from service client
+        start = (float(request.start.pose.position.x), float(request.start.pose.position.y))
+        goal = (float(request.goal.pose.position.x), float(request.goal.pose.position.y))
 
-        # Set to disable user input
-        start = (0, 0) 
-        goal = (9, 9)
+        self.get_logger().info(f'-------------Recived Path request from current position: {start} to goal: {goal}-------------')
+        
+        # Get path: Run path planner on grid
+        path = path_planner(grid, start, goal) # Other Params (set to default): max_iter, step_size, goal_sample_rate, radius)
 
-        # Call path planner to create path
-        path = path_planner(grid, start, goal) # Other Params (set to default) max_iter=100000, step_size=1.0, goal_sample_rate=0.3, radius=2.0)
+        # Create Response and Response plan (path) objects
+        response = GetPlan.Response()
+        response.plan = Path()
+
+        # Response Header
+        response.plan.header.stamp = self.get_clock().now().to_msg()
+        response.plan.header.frame_id = 'map'
 
         if path:
-            path_msg = Path()
-            path_msg.header.stamp = self.get_clock().now().to_msg()
-            path_msg.header.frame_id = 'map'
-
             for x, y in path:
                 pose = PoseStamped()
-                pose.header = path_msg.header
+                pose.header = response.plan.header
 
                 pose.pose.position.x = float(x)
                 pose.pose.position.y = float(y)
                 pose.pose.position.z = 0.0
 
-                path_msg.poses.append(pose)
-            self.path_publisher_.publish(path_msg)
+                response.plan.poses.append(pose)
 
-            # visualize the path
-            self.visualize_path(grid, path, start, goal)
-            self.path_published = True
+        # visualize the path
+        self.visualize_path(grid, path, start, goal)
+            
+        return response
 
 def main(args=None):
     rclpy.init(args=args)
-    path_planner_node = PathPlannerNode()
-    rclpy.spin(path_planner_node)
-    path_planner_node.destroy_node()
+    planner = PathPlannerNode()
+    rclpy.spin(planner)
+    path_planner.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':

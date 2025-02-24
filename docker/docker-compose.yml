@@ -1,55 +1,59 @@
 
 services:
-  occupancy:
+  ros_packages:
     build:
       context: ..           
-      dockerfile: docker/occupancy.dockerfile
-    volumes:
-      - ../src/occupancy_package:/NERF_WS/src/occupancy_package
-      - ../nerf_weights/stone_nerf:/NERF_WS/nerf_weights/stone_nerf
+      dockerfile: docker/dockerfile
     runtime: nvidia
+   
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - ROS_DOMAIN_ID=5
-      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-      - FASTRTPS_DEFAULT_PROFILES_FILE=/NERF_WS/fastdds.xml
       - DISPLAY=${DISPLAY} # Set the display to the host display
 
-    command: bash -c "ros2 launch foxglove_bridge foxglove_bridge_launch.xml & ros2 run occupancy_package node_occupancy & tail -f /dev/null"
-    network_mode: host
-
-  seg:
-    build:
-      context: ..           
-      dockerfile: docker/seg.dockerfile
     volumes:
-      - ../src/seg_package:/NERF_WS/src/seg_package
-    command: bash -c "ros2 run seg_package seg_node & tail -f /dev/null"
-    environment:
-      - ROS_DOMAIN_ID=5
-      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-      - FASTRTPS_DEFAULT_PROFILES_FILE=/NERF_WS/fastdds.xml
-      - DISPLAY=${DISPLAY} # Set the display to the host display
+      - ../src:/nerf_ws/src
+      - ../data:/nerf_ws/data
+    
+    command: bash -c "echo 'source /entrypoint.sh' >> ~/.bashrc && \ 
+              source ~/.bashrc && \
+              ros2 launch foxglove_bridge foxglove_bridge_launch.xml & \
+              ros2 run occupancy_package node_occupancy & \
+              ros2 run seg_package seg_node & \
+              tail -f /dev/null"
 
-    network_mode: host
+    # network_mode: host
 
-  path_planner:
-    build:
-      context: ..           
-      dockerfile: docker/path_planner.dockerfile
-    volumes:
-      - ../src/path_planner_package:/NERF_WS/src/path_planner_package
-    command: bash -c "ros2 run path_planner_package path_planner_node & tail -f /dev/null"
-    environment:
-      - ROS_DOMAIN_ID=5
-      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-      - FASTRTPS_DEFAULT_PROFILES_FILE=/NERF_WS/fastdds.xml
-      - DISPLAY=${DISPLAY} # Set the display to the host display
+#   seg:
+#     build:
+#       context: ..           
+#       dockerfile: docker/seg.dockerfile
+#     volumes:
+#       - ../src/seg_package:/nerf_ws/src/seg_package
+#     command: bash -c " ros2 run seg_package seg_node & tail -f /dev/null"
+#     environment:
+#       - ROS_DOMAIN_ID=5
+#       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+#       - DISPLAY=${DISPLAY} # Set the display to the host display
 
-    network_mode: host
+#     network_mode: host
 
-networks:
-  ros_network:
-    driver: bridge
-  foxglove_net:
-    driver: bridge
+#   path_planner:
+#     build:
+#       context: ..           
+#       dockerfile: docker/path_planner.dockerfile
+#     volumes:
+#       - ../src/path_planner_package:/nerf_ws/src/path_planner_package
+#     command: bash -c "ros2 run path_planner_package path_planner_node & tail -f /dev/null"
+#     environment:
+#       - ROS_DOMAIN_ID=5
+#       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+#       - DISPLAY=${DISPLAY} # Set the display to the host display
+
+#     network_mode: host
+
+# networks:
+#   ros_network:
+#     driver: bridge
+#   foxglove_net:
+#     driver: bridge

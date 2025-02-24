@@ -4,8 +4,8 @@
   <name>path_planner_package</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="kishore.yogaraj@gmail.com">kishorey</maintainer>
-  <license>MIT</license>
+  <maintainer email="mustafa.a.hamoody@gmail.com">mustafa</maintainer>
+  <license>TODO: License declaration</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

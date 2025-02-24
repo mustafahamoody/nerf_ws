@@ -64,11 +64,11 @@ RUN pip3 install --no-cache-dir \
     --extra-index-url https://download.pytorch.org/whl/cu126
 
 # Create the ROS2 workspace directory and its src folder
-ENV WORKSPACE=/NERF_ws
+ENV WORKSPACE=/nerf_ws
 RUN mkdir -p ${WORKSPACE}/src
 
 # Copy the ROS2 package from the build context
-# Assumes the build context is set to the root of NERF_ws so that src/path_planner_package exists.
+# Assumes the build context is set to the root of nerf_ws so that src/path_planner_package exists.
 COPY src/path_planner_package ${WORKSPACE}/src/path_planner_package
 
 # (Optional) Initialize rosdep – ignore errors if already initialized
@@ -78,7 +78,7 @@ RUN rosdep init || true && rosdep update || true
 WORKDIR ${WORKSPACE}
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-install"
 
-# Copy the entrypoint script (placed in NERF_ws/docker/entrypoint.sh)
+# Copy the entrypoint script (placed in nerf_ws/docker/entrypoint.sh)
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

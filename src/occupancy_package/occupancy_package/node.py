@@ -79,12 +79,12 @@ class OccupancyGridNode(Node):
 
         # # Load configuration files via ROS parameters
         # self.declare_parameter('config_file_model',
-        #                        '/home/kishorey/NERF_ws/src/occupancy_package/occupancy_package/config/model_config.yaml')
+        #                        '/home/kishorey/nerf_ws/src/occupancy_package/occupancy_package/config/model_config.yaml')
         # config_file_model = self.get_parameter('config_file_model').get_parameter_value().string_value
         # self.config_model = load_config(config_file_model)
 
         # self.declare_parameter('config_file_trainer',
-        #                        '/home/kishorey/NERF_ws/src/occupancy_package/occupancy_package/config/trainer_config.yaml')
+        #                        '/home/kishorey/nerf_ws/src/occupancy_package/occupancy_package/config/trainer_config.yaml')
         # config_file_trainer = self.get_parameter('config_file_trainer').get_parameter_value().string_value
         # self.config_trainer = load_config(config_file_trainer)
 
