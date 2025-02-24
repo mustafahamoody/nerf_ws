@@ -8,8 +8,10 @@ from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 
 # Path Planner Options: A* (A Star), RRT* (Rapidly-exploring Random Tree Star)
-from path_planner_package.path_planner_package.path_planners.path_planner_Astar import a_star
+from path_planner_package.path_planners.path_planner_Astar import a_star
+from path_planner_package.path_planners.path_planner_Astar_bad import a_star_bad
 from path_planner_package.path_planners.path_planner_RRTstar import rrt_star
+
 
 path_planner = a_star # Choose Path Planner to use: a_star (A*) or rrt_star (RRT*)
 
@@ -46,7 +48,7 @@ class PathPlannerNode(Node):
 
         # Get grid from subscription
         width, height = msg.info.width, msg.info.height
-        data = np.array(msg.data).reshaper((height, width))
+        data = np.array(msg.data).reshape((height, width))
         self.grid = np.where(data == -1, 100, data)  # Replace unknown (-1) with high cost (100)
         self.get_logger().info('Occupancy grid received')
 

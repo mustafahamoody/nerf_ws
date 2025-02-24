@@ -22,7 +22,7 @@ setup(
         'console_scripts': [
             'path_planner_node = path_planner_package.path_planner_node:main',
             'path_planner_node2 = path_planner_package.path_planner_node2:main',
-            'path_planner_server = path_planner_package.path_planner_server:main',
+            'path_planner_service = path_planner_package.path_planner_service:main',
         ],
     },
 )

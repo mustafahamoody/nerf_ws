@@ -7,7 +7,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Set basic locale environment variables (ROS2 requires UTF-8)
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
-ENV CUDA_HOME='/usr/local/cuda' 
+ENV CUDA_HOME='/usr/local/cuda'
 
 # Install basic tools needed to add the ROS repository
 RUN apt-get update && apt-get install -y --no-install-recommends \
