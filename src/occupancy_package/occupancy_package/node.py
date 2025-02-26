@@ -20,6 +20,9 @@ from geometry_msgs.msg import Point  # Needed for Marker.CUBE_LIST
 from occupancy_package.libs.nerf.network import NeRFNetwork
 from occupancy_package.libs.nerf.utils import Trainer
 
+#Import trainer options (opt)
+from occupancy_package.config.model_options import ModelOptions
+
 def load_config(file_path):
     """Load YAML configuration file with environment variable expansion."""
     try:
@@ -113,7 +116,7 @@ class OccupancyGridNode(Node):
         # Initialize the Trainer (this loads weights from a checkpoint)
         self.trainer = Trainer(
             'ngp',
-            opt,
+            opt=ModelOptions.opt(),
             model=self.model,
             device=self.device,
             workspace=self.config_trainer['trainer']['workspace'],

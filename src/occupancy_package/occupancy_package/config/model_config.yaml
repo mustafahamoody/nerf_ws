@@ -1,7 +1,7 @@
 model:
   encoding: "hashgrid"
   bound: 2
-  cuda_ray: False
+  cuda_ray: True
   density_scale: 1
   min_near: 0.2
   density_thresh: 10
