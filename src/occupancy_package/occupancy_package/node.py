@@ -161,7 +161,7 @@ class OccupancyGridNode(Node):
         perform maxpooling to reduce the grid to 20x20x20, and publish a Marker.CUBE_LIST
         representing the occupied voxels.
         """
-        side = 200
+        side = 180
         # Generate grid coordinates in the domain [-1,1]
         x_linspace = torch.linspace(-1, 1, side, device=self.device)
         y_linspace = torch.linspace(-1, 1, side, device=self.device)
@@ -179,7 +179,7 @@ class OccupancyGridNode(Node):
         kernel_size = 2  # This will reduce the grid to 20x20x20
         maxpool = torch.nn.MaxPool3d(kernel_size=kernel_size)
         sigma_pooled = maxpool(sigma_grid_unsq)[0, 0]  # Shape: [20, 20, 20]
-        threshold = 0.3
+        threshold = 8.0  # Threshold for occupied voxels
         occupied = sigma_pooled > threshold  # Boolean tensor
 
         # Compute voxel size: original domain length (2) divided by 20 = 0.1 per voxel.
