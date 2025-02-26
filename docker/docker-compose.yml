@@ -10,7 +10,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - ROS_DOMAIN_ID=5
       - DISPLAY=${DISPLAY} # Set the display to the host display
-      - ENV MODEL_WEIGHTS_PATH=nerf_ws/data/stone_nerf # Set the model weights path
+      - MODEL_WEIGHTS_PATH=/nerf_ws/data/box2.0_nerf # Set the model weights path
 
 
     volumes:
