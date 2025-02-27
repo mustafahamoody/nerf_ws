@@ -2,8 +2,10 @@ import argparse
 
 # Change according to NeRF env values
 bound = 2.0 # Default (Axis-ALigned) Bounding Box scale
-scale = 0.33 # Default scale
-dt_gamma = 0.02
+scale = 0.5 # Default scale
+dt_gamma = 0.0 # Default dt_gamma
+density_thresh = 10.0 # Default density threshold
+iters = 40000 # Default number of iterations
 
 class ModelOptions:
 
@@ -17,7 +19,7 @@ class ModelOptions:
         parser.add_argument('--seed', type=int, default=0)
 
         ### training options
-        parser.add_argument('--iters', type=int, default=30000, help="training iters")
+        parser.add_argument('--iters', type=int, default=iters, help="training iters")
         parser.add_argument('--lr', type=float, default=1e-2, help="initial learning rate")
         parser.add_argument('--ckpt', type=str, default='latest')
         parser.add_argument('--num_rays', type=int, default=4096, help="num rays sampled per image for each training step")
@@ -43,7 +45,7 @@ class ModelOptions:
         parser.add_argument('--offset', type=float, nargs='*', default=[0, 0, 0], help="offset of camera location")
         parser.add_argument('--dt_gamma', type=float, default=dt_gamma, help="dt_gamma (>=0) for adaptive ray marching. set to 0 to disable, >0 to accelerate rendering (but usually with worse quality)")
         parser.add_argument('--min_near', type=float, default=0.2, help="minimum near distance for camera")
-        parser.add_argument('--density_thresh', type=float, default=10, help="threshold for density grid to be occupied")
+        parser.add_argument('--density_thresh', type=float, default=density_thresh, help="threshold for density grid to be occupied")
         parser.add_argument('--bg_radius', type=float, default=-1, help="if positive, use a background model at sphere(bg_radius)")
 
         ### GUI options
