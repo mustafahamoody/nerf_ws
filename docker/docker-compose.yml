@@ -12,6 +12,7 @@ services:
       - DISPLAY=${DISPLAY} # Set the display to the host display
       - MODEL_WEIGHTS_PATH=/nerf_ws/data/box2.0_nerf # Set the model weights path
 
+    user: 1000:1000  # Set linux user id and group so files and dirs are created as user, and not root
 
     volumes:
       - ../src:/nerf_ws/src
