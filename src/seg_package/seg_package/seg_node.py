@@ -17,8 +17,8 @@ class GroundSegmentationNode(Node):
         
         # Parameters (with default values)
         self.declare_parameter('ground_lower', -1)
-        self.declare_parameter('ground_upper', 0.2)
-        self.declare_parameter('z_center', 0.5)
+        self.declare_parameter('ground_upper', -0.0)
+        self.declare_parameter('z_center', 0.1)
         self.declare_parameter('z_band_thickness', 1.5)
         self.declare_parameter('grid_resolution', 100)  # lateral resolution for x and y, and also z
         self.declare_parameter('grid_min', -1.0)         # domain minimum for each axis
