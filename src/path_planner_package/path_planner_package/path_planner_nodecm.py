@@ -42,7 +42,8 @@ def calculate_heuristic(pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
 def get_valid_neighbors(grid: np.ndarray, position: Tuple[int, int]) -> List[Tuple[int, int]]:
     """
     Get valid neighboring cells that are not obstacles.
-    position is (x,y) but grid is accessed as [y,x]
+    In this costmap, a cell with value 100 is considered an obstacle.
+    Position is (x,y) but grid is accessed as [y,x].
     """
     x, y = position
     rows, cols = grid.shape
@@ -52,17 +53,16 @@ def get_valid_neighbors(grid: np.ndarray, position: Tuple[int, int]) -> List[Tup
             if dx == 0 and dy == 0:
                 continue
             nx, ny = x + dx, y + dy
-            if 0 <= ny < rows and 0 <= nx < cols:  # Note the order: ny < rows, nx < cols
-                # Check that the neighbor cell is free (value should be 0)
-                if grid[ny, nx] == 100:  # Access as [y,x]
+            if 0 <= ny < rows and 0 <= nx < cols:
+                # Skip if the neighbor cell is an obstacle.
+                if grid[ny, nx] == 100:
                     continue
-                # If moving diagonally, check adjacent cardinal cells
+                # For diagonal moves, check that adjacent cardinal cells are not obstacles.
                 if dx != 0 and dy != 0:
-                    if grid[y + dy, x] == 100 or grid[y, x + dx] == 100:  # Access as [y,x]
+                    if grid[y + dy, x] == 100 or grid[y, x + dx] == 100:
                         continue
                 neighbors.append((nx, ny))
     return neighbors
-
 
 def reconstruct_path(goal_node: Dict) -> List[Tuple[int, int]]:
     """
@@ -79,12 +79,12 @@ def find_path(grid: np.ndarray, start: Tuple[int, int],
               goal: Tuple[int, int]) -> List[Tuple[int, int]]:
     """
     Find the optimal path using the A* algorithm.
-    grid: 2D numpy array (0 = free, 1 = obstacle)
+    grid: 2D numpy array of cost values (0 = free, gradient values for near obstacles, 100 = obstacle)
     start and goal: grid indices (x, y)
     Returns a list of grid positions representing the path.
     """
     start_node = create_node(position=start, g=0, h=calculate_heuristic(start, goal))
-    open_list = [(start_node['f'], start)]  # priority queue of (f, position)
+    open_list = [(start_node['f'], start)]  # Priority queue of (f, position)
     open_dict = {start: start_node}
     closed_set = set()
     
@@ -100,7 +100,10 @@ def find_path(grid: np.ndarray, start: Tuple[int, int],
         for neighbor_pos in get_valid_neighbors(grid, current_pos):
             if neighbor_pos in closed_set:
                 continue
-            tentative_g = current_node['g'] + calculate_heuristic(current_pos, neighbor_pos)
+            # Incorporate both the movement cost (Euclidean distance) and the costmap penalty.
+            move_cost = calculate_heuristic(current_pos, neighbor_pos)
+            cell_penalty = float(grid[neighbor_pos[1], neighbor_pos[0]])
+            tentative_g = current_node['g'] + move_cost + cell_penalty
             
             if neighbor_pos not in open_dict:
                 neighbor = create_node(
@@ -127,19 +130,19 @@ class PathPlannerNode(Node):
     def __init__(self):
         super().__init__('path_planner_node')
         
-        # Declare parameters for start and goal in world coordinates
+        # Declare parameters for start and goal in world coordinates.
         self.declare_parameter('start_x', 0.0)
-        self.declare_parameter('start_y', -0.7)
+        self.declare_parameter('start_y', -0.9)
         self.declare_parameter('goal_x', -0.9)
         self.declare_parameter('goal_y', 0.9)
         
-        # Get the parameters
+        # Get the parameters.
         self.start_x = self.get_parameter('start_x').value
         self.start_y = self.get_parameter('start_y').value
         self.goal_x = self.get_parameter('goal_x').value
         self.goal_y = self.get_parameter('goal_y').value
         
-        # Create a subscriber to the 2D occupancy grid
+        # Create a subscriber to the costmap.
         self.occ_sub = self.create_subscription(
             OccupancyGrid,
             'costmap',
@@ -147,13 +150,13 @@ class PathPlannerNode(Node):
             10
         )
         
-        # Publishers for the path and markers
+        # Publishers for the path and markers.
         self.path_pub = self.create_publisher(Path, 'planned_path', 10)
         self.marker_pub = self.create_publisher(Marker, 'path_marker', 10)
         self.start_marker_pub = self.create_publisher(Marker, 'start_marker', 10)
         self.goal_marker_pub = self.create_publisher(Marker, 'goal_marker', 10)
         
-        # To ensure we plan only once (since occupancy grid is static)
+        # To ensure we plan only once (if the costmap is static).
         self.path_planned = False
         
         self.get_logger().info("PathPlannerNode initialized.")
@@ -162,7 +165,7 @@ class PathPlannerNode(Node):
         if self.path_planned:
             return
         
-        self.get_logger().info("Received occupancy grid message, planning path.")
+        self.get_logger().info("Received costmap message, planning path.")
         
         width = occ_msg.info.width
         height = occ_msg.info.height
@@ -170,31 +173,31 @@ class PathPlannerNode(Node):
         origin_x = occ_msg.info.origin.position.x
         origin_y = occ_msg.info.origin.position.y
         
-        # OccupancyGrid data is a 1D list; reshape to 2D array
-        grid_data = np.array(occ_msg.data).reshape((height, width))  # Note: shape is (height, width)
+        # Reshape the 1D costmap data into a 2D NumPy array.
+        grid_data = np.array(occ_msg.data).reshape((height, width))
         
-        # Debug prints
+        # Debug prints.
         self.get_logger().info(f"Grid shape: {grid_data.shape}")
         self.get_logger().info(f"Grid values range: min={np.min(grid_data)}, max={np.max(grid_data)}")
         self.get_logger().info(f"Number of obstacles: {np.sum(grid_data == 100)}")
         
-        # Convert start and goal world coordinates to grid indices
+        # Convert start and goal world coordinates to grid indices.
         start_x = int((self.start_x - origin_x) / resolution)
         start_y = int((self.start_y - origin_y) / resolution)
         goal_x = int((self.goal_x - origin_x) / resolution)
         goal_y = int((self.goal_y - origin_y) / resolution)
         
-        # Ensure indices are within bounds
+        # Ensure indices are within bounds.
         start_x = max(0, min(start_x, width - 1))
         start_y = max(0, min(start_y, height - 1))
         goal_x = max(0, min(goal_x, width - 1))
         goal_y = max(0, min(goal_y, height - 1))
         
-        # Check if start or goal is in obstacle
-        if grid_data[start_y, start_x] == 100:  # Note the order: [y,x]
+        # Check if start or goal is in an obstacle.
+        if grid_data[start_y, start_x] == 100:
             self.get_logger().error("Start position is in an obstacle!")
             return
-        if grid_data[goal_y, goal_x] == 100:  # Note the order: [y,x]
+        if grid_data[goal_y, goal_x] == 100:
             self.get_logger().error("Goal position is in an obstacle!")
             return
         
@@ -203,10 +206,10 @@ class PathPlannerNode(Node):
         
         self.get_logger().info(f"Start grid index: {start_idx}, Goal grid index: {goal_idx}")
         
-        # Add debug visualization of obstacles
-        self.get_logger().info("Obstacle positions:")
+        # Log some obstacle positions for debugging.
+        self.get_logger().info("Obstacle positions (first 5):")
         obstacle_positions = np.where(grid_data == 100)
-        for y, x in zip(obstacle_positions[0][:5], obstacle_positions[1][:5]):  # Print first 5 obstacles
+        for y, x in zip(obstacle_positions[0][:5], obstacle_positions[1][:5]):
             self.get_logger().info(f"Obstacle at: ({x}, {y})")
         
         path_indices = find_path(grid_data, start_idx, goal_idx)
@@ -215,12 +218,9 @@ class PathPlannerNode(Node):
             self.get_logger().error("No path found!")
             return
         self.get_logger().info(f"Path found with {len(path_indices)} steps.")
-
         self.get_logger().info("Path grid indices: " + str(path_indices))
         
         # Convert grid indices back to world coordinates.
-        # We assume the center of a cell (i, j) is:
-        # wx = origin_x + (i + 0.5) * resolution, similarly for y.
         path_world = []
         for i, j in path_indices:
             wx = origin_x + (i + 0.5) * resolution
@@ -229,15 +229,14 @@ class PathPlannerNode(Node):
         
         # Publish the path as a nav_msgs/Path message.
         path_msg = Path()
-        path_msg.header = occ_msg.header  # Use same header (frame and time)
+        path_msg.header = occ_msg.header
         for (wx, wy) in path_world:
             pose = PoseStamped()
             pose.header = occ_msg.header
             pose.pose.position.x = wx
             pose.pose.position.y = wy
             pose.pose.position.z = 0.0
-            # Identity orientation.
-            pose.pose.orientation.w = 1.0
+            pose.pose.orientation.w = 1.0  # Identity orientation.
             path_msg.poses.append(pose)
         self.path_pub.publish(path_msg)
         self.get_logger().info("Published nav_msgs/Path message.")
@@ -249,7 +248,7 @@ class PathPlannerNode(Node):
         marker.id = 0
         marker.type = Marker.LINE_STRIP
         marker.action = Marker.ADD
-        marker.scale.x = resolution / 2.0  # line width
+        marker.scale.x = resolution / 2.0  # Line width.
         marker.color.r = 90.0
         marker.color.g = 34.0
         marker.color.b = 139.0
@@ -270,7 +269,7 @@ class PathPlannerNode(Node):
         self.path_planned = True
 
     def _publish_start_goal_markers(self, header, start_world: Tuple[float, float], goal_world: Tuple[float, float], resolution: float):
-        # Start marker (green sphere)
+        # Start marker (green sphere).
         start_marker = Marker()
         start_marker.header = header
         start_marker.ns = "start_goal"
@@ -290,7 +289,7 @@ class PathPlannerNode(Node):
         start_marker.color.a = 1.0
         self.start_marker_pub.publish(start_marker)
         
-        # Goal marker (red sphere)
+        # Goal marker (red sphere).
         goal_marker = Marker()
         goal_marker.header = header
         goal_marker.ns = "start_goal"
