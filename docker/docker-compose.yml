@@ -10,21 +10,26 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - ROS_DOMAIN_ID=5
       - DISPLAY=${DISPLAY} # Set the display to the host display
-      - MODEL_WEIGHTS_PATH=/nerf_ws/data/my_scene_nerf_2 # Set the model weights path
-
-    user: 1000:1000  # Set linux user id and group so files and dirs are created as user, and not root
+      - MODEL_WEIGHTS_PATH=/nerf_ws/data/my_scene_nerf # Set the model weights path
 
     volumes:
       - ../src:/nerf_ws/src
       - ../data:/nerf_ws/data
     
-    command: bash -c "echo 'source /entrypoint.sh' >> ~/.bashrc && \ 
-              source ~/.bashrc && \
-              ros2 launch foxglove_bridge foxglove_bridge_launch.xml & \
-              ros2 run occupancy_package node_occupancy & \
-              ros2 run seg_package seg_node & \
-              ros2 run path_planner_package path_planner_node & \
-              ros2 run path_planner_package path_planner_service & \
-              tail -f /dev/null"
+    command: >
+      bash -c "
+        # Update entrypoint permissions
+        chmod +x /entrypoint.sh &&
+        
+        # Create better shell configuration
+        echo 'source /entrypoint.sh' >> ~/.bashrc &&
+        
+        # Start background services
+        source ~/.bashrc &&
+        ros2 launch foxglove_bridge foxglove_bridge_launch.xml &
+        
+        # Keep container running
+        tail -f /dev/null
+      "
 
     network_mode: host

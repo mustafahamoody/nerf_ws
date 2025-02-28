@@ -128,8 +128,8 @@ class PathPlannerNode(Node):
         super().__init__('path_planner_node')
         
         # Declare parameters for start and goal in world coordinates
-        self.declare_parameter('start_x', 0.7)
-        self.declare_parameter('start_y', -0.9)
+        self.declare_parameter('start_x', 0.0)
+        self.declare_parameter('start_y', -0.7)
         self.declare_parameter('goal_x', -0.9)
         self.declare_parameter('goal_y', 0.9)
         
