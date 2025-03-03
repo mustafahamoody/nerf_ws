@@ -32,7 +32,7 @@ setup(
     # tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'node_occupancy = occupancy_package.node:main'
+            'occupancy_node = occupancy_package.node:main'
         ],
     },
 )

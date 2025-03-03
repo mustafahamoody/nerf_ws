@@ -98,7 +98,7 @@ ENV TORCH_EXTENSIONS_DIR=${WORKSPACE}/torch_extensions
 RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 
 # **Set CUDA architecture list explicitly to avoid detection issues**
-ENV TORCH_CUDA_ARCH_LIST="8.6"
+ENV TORCH_CUDA_ARCH_LIST="6.1"
 
 # Precompile Torch extensions by importing the modules that compile them.
 # This step will compile your extensions and store the compiled artifacts in TORCH_EXTENSIONS_DIR.
@@ -116,4 +116,4 @@ RUN echo "export UID=$(id -u)" >> /root/.bashrc && \
     echo "export GID=$(id -g)" >> /root/.bashrc
 
 # Default command: run the occupancy package node.
-CMD ["ros2", "run", "occupancy_package", "node_occupancy"]
+CMD ["ros2", "run", "occupancy_package", "occupancy_node"]

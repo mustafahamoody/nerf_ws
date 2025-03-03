@@ -161,7 +161,7 @@ class OccupancyGridNode(Node):
         perform maxpooling to reduce the grid to 20x20x20, and publish a Marker.CUBE_LIST
         representing the occupied voxels.
         """
-        side = 250
+        side = 200
         # Generate grid coordinates in the domain [-1,1]
         x_linspace = torch.linspace(-1, 1, side, device=self.device)
         y_linspace = torch.linspace(-1, 1, side, device=self.device)
