@@ -8,6 +8,7 @@ from geometry_msgs.msg import PoseStamped
 
 # Path Planner Options: A* (A Star), RRT* (Rapidly-exploring Random Tree Star)
 from path_planner_package.path_planners.path_planner_Astar import a_star
+from path_planner_package.path_planners.path_planner_Astar_cm import a_star_cm
 from path_planner_package.path_planners.path_planner_Astar_bad import a_star_bad
 from path_planner_package.path_planners.path_planner_RRTstar import rrt_star
 
@@ -20,14 +21,14 @@ from path_planner_package.path_planners.path_planner_RRTstar import rrt_star
 
 
 # Choose Path Planner to use: a_star (A*) or rrt_star (RRT*)
-path_planner = a_star
+path_planner = a_star_cm
 
 class PathPlannerNode(Node):
     def __init__(self):
         super().__init__('path_planner_node')
         
         # Subscriber for occupancy grid
-        self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'occupancy_grid_2d', self.get_occupancy_grid, 10)
+        self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'costmap', self.get_occupancy_grid, 10)
         
         # Publisher for path
         self.path_publisher_ = self.create_publisher(Path, 'path', 10)

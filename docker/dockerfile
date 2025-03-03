@@ -111,5 +111,9 @@ RUN chmod +x /entrypoint.sh
 # Set the entrypoint to source ROS2 and workspace setup files before running commands
 ENTRYPOINT ["/entrypoint.sh"]
 
+# Set the UID and GID dynamically during build  -- Needed for the user to have access to the files and dirs
+RUN echo "export UID=$(id -u)" >> /root/.bashrc && \
+    echo "export GID=$(id -g)" >> /root/.bashrc
+
 # Default command: run the occupancy package node.
 CMD ["ros2", "run", "occupancy_package", "node_occupancy"]

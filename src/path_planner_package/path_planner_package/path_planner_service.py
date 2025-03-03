@@ -8,19 +8,20 @@ from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 
 # Path Planner Options: A* (A Star), RRT* (Rapidly-exploring Random Tree Star)
+from path_planner_package.path_planners.path_planner_Astar_cm import a_star_cm
 from path_planner_package.path_planners.path_planner_Astar import a_star
 from path_planner_package.path_planners.path_planner_Astar_bad import a_star_bad
 from path_planner_package.path_planners.path_planner_RRTstar import rrt_star
 
 
-path_planner = a_star # Choose Path Planner to use: a_star (A*) or rrt_star (RRT*)
+path_planner = a_star_cm # Choose Path Planner to use: a_star (A*) or rrt_star (RRT*)
 
 class PathPlannerNode(Node):
     def __init__(self):
         super().__init__('path_planner_service')
         
         # Subscriber for occupancy grid
-        self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'occupancy_grid_2d', self.get_occupancy_grid, 10)
+        self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'costmap', self.get_occupancy_grid, 10)
         
         # Service Server to publish path to controller (with start, goal, and headding parameters)
         self.service = self.create_service(GetPlan, 'get_path', self.get_path_callback)
