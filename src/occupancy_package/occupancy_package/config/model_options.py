@@ -1,11 +1,25 @@
 import argparse
+import yaml
+import os
 
-# Change according to NeRF env values
-bound = 2.0 # Default (Axis-ALigned) Bounding Box scale
-scale = 0.5 # Default scale
-dt_gamma = 0.0 # Default dt_gamma
-density_thresh = 10.0 # Default density threshold
-iters = 40000 # Default number of iterations
+# Get model config path from environment variable - Set in dockerfile
+model_config_path = os.environ.get('MODEL_CONFIG_PATH')
+
+# Check if model config path is set
+if not model_config_path:
+    raise EnvironmentError("MODEL_CONFIG_PATH environment variable must be set")
+
+
+#Load model config from model_config.yaml
+with open(model_config_path, 'r') as file:
+    config = yaml.safe_load(file)
+
+# Set nerf config values for inference
+bound = config['model']['bound'] # Default (Axis-ALigned) Bounding Box scale
+scale = config['model']['scale'] # Default scale
+dt_gamma = config['model']['dt_gamma'] # Default dt_gamma
+density_thresh = config['model']['density_thresh'] # Default density threshold
+iters = config['model']['iters'] # Default number of iterations
 
 class ModelOptions:
 

@@ -71,6 +71,7 @@ class OccupancyGridNode(Node):
             self.get_logger().error(f"Failed to load configurations: {e}")
             raise
 
+
         # Publisher for the occupancy grid (PointCloud2) -- for future use.
         self.pc_pub = self.create_publisher(PointCloud2, 'occupancy_grid', 10)
 
@@ -121,7 +122,7 @@ class OccupancyGridNode(Node):
             device=self.device,
             workspace=self.config_trainer['trainer']['workspace'],
             criterion=self.criterion,
-            fp16=self.config_trainer['trainer']['fp16'],
+            fp16=self.config_trainer['model']['fp16'],
             use_checkpoint=self.config_trainer['trainer']['use_checkpoint'],
         )
 

@@ -88,8 +88,8 @@ WORKDIR ${WORKSPACE}
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-install"
 
 # Set environment variables for configuration file paths (if needed)
-ENV MODEL_CONFIG_PATH=${WORKSPACE}/src/occupancy_package/occupancy_package/config/model_config.yaml
-ENV TRAINER_CONFIG_PATH=${WORKSPACE}/src/occupancy_package/occupancy_package/config/trainer_config.yaml
+ENV MODEL_CONFIG_PATH=${WORKSPACE}/nerf_config/model_config.yaml
+ENV TRAINER_CONFIG_PATH=${WORKSPACE}/nerf_config/trainer_config.yaml
 ENV MODEL_WEIGHTS_PATH=${WORKSPACE}/data/stone_nerf
 ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
@@ -98,7 +98,8 @@ ENV TORCH_EXTENSIONS_DIR=${WORKSPACE}/torch_extensions
 RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 
 # **Set CUDA architecture list explicitly to avoid detection issues**
-ENV TORCH_CUDA_ARCH_LIST="6.1"
+ENV TORCH_CUDA_ARCH_LIST="8.6"
+
 
 # Precompile Torch extensions by importing the modules that compile them.
 # This step will compile your extensions and store the compiled artifacts in TORCH_EXTENSIONS_DIR.
