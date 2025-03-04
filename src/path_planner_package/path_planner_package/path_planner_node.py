@@ -13,7 +13,7 @@ from path_planner_package.path_planners.path_planner_RRTstar import rrt_star
 from path_planner_package.path_planners.path_planner_Astar_cm import a_star_cm
 
 
-# Choose Path Planner to use: a_star (A*) or rrt_star (RRT*)
+# Choose Path Planner to use: a_star_cm (A* with cost map), a_star (A*), or rrt_star (RRT*)
 path_planner = a_star_cm
 
 
@@ -22,7 +22,7 @@ class PathPlannerNode(Node):
         super().__init__('path_planner_node')
         
         # Set start and goal positions
-        self.start = (-0.9, -0.9) 
+        self.start = (0.0, -0.9) 
         self.goal = (0.9, 0.9)
 
         # Only publish path once
