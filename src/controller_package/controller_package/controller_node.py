@@ -8,9 +8,16 @@ import numpy as np
 
 from controller_package.control_logic import RobotController # Import controller logic
 
+
+
+
 class ControllerNode(Node):
     def __init__(self):
         super().__init__('controller_node')
+
+        # Set start and goal positions
+        self.start = (0.0, -0.9)
+        self.goal = (-0.9, 0.9)
 
         # Service Client to request path from path planner
         self.client = self.create_client(GetPlan, 'get_path')
@@ -19,7 +26,7 @@ class ControllerNode(Node):
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         
         # Robot (Initial) Start Position 
-        self.robot_x, self.robot_y = 0.0, 0.0
+        self.robot_x, self.robot_y = self.start[0], self.start[1]
         self.robot_yaw = 0.0
         
         # Initialize Robot Controller
@@ -31,8 +38,8 @@ class ControllerNode(Node):
         self.start.pose.position.y = self.robot_y
 
         self.goal = PoseStamped()
-        self.goal.pose.position.x = 9.0
-        self.goal.pose.position.y = 9.0
+        self.goal.pose.position.x = self.goal[0]
+        self.goal.pose.position.y = self.goal[1]
 
         # Sets target waypoint and stores path before calling path planner again
         self.target_waypoint_index = 0

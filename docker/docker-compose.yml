@@ -14,6 +14,7 @@ services:
     volumes:
       - ../src:/nerf_ws/src
       - ../data:/nerf_ws/data
+      - ../nerf_config:/nerf_ws/nerf_config
 
     command: >
       bash -c "

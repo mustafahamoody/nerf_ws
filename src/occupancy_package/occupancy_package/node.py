@@ -122,7 +122,7 @@ class OccupancyGridNode(Node):
             device=self.device,
             workspace=self.config_trainer['trainer']['workspace'],
             criterion=self.criterion,
-            fp16=self.config_trainer['model']['fp16'],
+            fp16=self.config_model['model']['fp16'],
             use_checkpoint=self.config_trainer['trainer']['use_checkpoint'],
         )
 

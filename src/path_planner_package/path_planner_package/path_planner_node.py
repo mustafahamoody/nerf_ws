@@ -8,25 +8,27 @@ from geometry_msgs.msg import PoseStamped
 
 # Path Planner Options: A* (A Star), RRT* (Rapidly-exploring Random Tree Star)
 from path_planner_package.path_planners.path_planner_Astar import a_star
-from path_planner_package.path_planners.path_planner_Astar_cm import a_star_cm
 from path_planner_package.path_planners.path_planner_Astar_bad import a_star_bad
 from path_planner_package.path_planners.path_planner_RRTstar import rrt_star
-
-# # Get start and goal positions from user
-# start = input("Enter start location x, y: ").strip() or "0, 0"
-# start = tuple(map(int, start.split(',')))
-
-# goal = input("Enter goal location x, y: ").strip() or "9, 9"
-# goal = tuple(map(int, goal.split(',')))
+from path_planner_package.path_planners.path_planner_Astar_cm import a_star_cm
 
 
 # Choose Path Planner to use: a_star (A*) or rrt_star (RRT*)
 path_planner = a_star_cm
 
+
 class PathPlannerNode(Node):
     def __init__(self):
         super().__init__('path_planner_node')
         
+        # Set start and goal positions
+        self.start = (-0.9, -0.9) 
+        self.goal = (0.9, 0.9)
+
+        # Only publish path once
+        self.publish_once = False
+
+
         # Subscriber for occupancy grid
         self.occupancy_grid_subscriber = self.create_subscription(OccupancyGrid, 'costmap', self.get_occupancy_grid, 10)
         
@@ -47,7 +49,7 @@ class PathPlannerNode(Node):
         # Only get occupancy grid once (static map)
         self.occupancy_grid_received = False
 
-        # Only publish path once
+        # Determine if path has already been published if publish_once is True
         self.path_published = False
 
     def get_occupancy_grid(self, msg):
@@ -58,8 +60,8 @@ class PathPlannerNode(Node):
         # Get grid from subscription
         width, height = msg.info.width, msg.info.height
 
-        data = np.array(msg.data).reshape((height, width))
-        self.grid = np.where(data == -1, 100, data)  # Replace unknown (-1) with high cost (100)
+        grid_data = np.array(msg.data).reshape((height, width))
+        self.grid = np.where(grid_data == -1, 100, grid_data)  # Replace unknown (-1) with high cost (100)
         
         self.get_logger().info('Occupancy grid received')
 
@@ -83,15 +85,11 @@ class PathPlannerNode(Node):
             self.get_logger().warn("Waiting for occupancy grid...")
             return  # Exit until the grid is received
 
-        # Set to disable user input
-        start = (0.7, -0.9) 
-        goal = (-0.9, 0.9)
-
         # Convert start and goal world coordinates to grid indices
-        start_x = int((start[0] - self.origin_x) / self.resolution)
-        start_y = int((start[1] - self.origin_y) / self.resolution)
-        goal_x = int((goal[0] - self.origin_x) / self.resolution)
-        goal_y = int((goal[1] - self.origin_y) / self.resolution)
+        start_x = int((self.start[0] - self.origin_x) / self.resolution)
+        start_y = int((self.start[1] - self.origin_y) / self.resolution)
+        goal_x = int((self.goal[0] - self.origin_x) / self.resolution)
+        goal_y = int((self.goal[1] - self.origin_y) / self.resolution)
 
         # Ensure indices are within bounds
         start_x = max(0, min(start_x, self.width - 1))
@@ -145,8 +143,8 @@ class PathPlannerNode(Node):
                 path_msg.poses.append(pose)
             self.path_publisher_.publish(path_msg)
 
-            # visualize the path
-            self.path_published = True
+            if self.publish_once:
+                self.path_published = True
 
 
 def main(args=None):
