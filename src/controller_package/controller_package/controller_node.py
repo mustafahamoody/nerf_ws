@@ -9,8 +9,6 @@ import numpy as np
 from controller_package.control_logic import RobotController # Import controller logic
 
 
-
-
 class ControllerNode(Node):
     def __init__(self):
         super().__init__('controller_node')

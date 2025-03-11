@@ -39,9 +39,6 @@ class PathPlannerNode(Node):
         # Only get occupancy grid once (static map)
         self.occupancy_grid_received = False
 
-        # Only publish path once
-        self.path_published = False
-
     def get_occupancy_grid(self, msg):
 
         if self.occupancy_grid_received:
@@ -67,26 +64,6 @@ class PathPlannerNode(Node):
         if self.grid is None:
             self.get_logger().warn("Waiting for occupancy grid...")
             return  # Exit until the grid is received
-
-        # Empty grid
-        # grid = np.zeros((10, 10))
-        
-        # # "Grid with box in middle"
-        # grid = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-        #                 [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                 ])
-
-        # # Set to disable user input
-        # start = (0.7, -0.9) 
-        # goal = (-0.9, 0.9)
         
         # Get start and goal from service client
         start = (float(request.start.pose.position.x), float(request.start.pose.position.y))
