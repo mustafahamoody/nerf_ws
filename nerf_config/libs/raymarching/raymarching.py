@@ -7,11 +7,11 @@ from torch.autograd import Function
 from torch.cuda.amp import custom_bwd, custom_fwd
 
 # try:
-#     from occupancy_package.libs.raymarching.raymarching import _raymarching as _backend
+#     from nerf_config.libs.raymarching.raymarching import _raymarching as _backend
 # except ImportError:
 #     from .backend import _backend
 
-from occupancy_package.libs.raymarching.backend import _backend
+from nerf_config.libs.raymarching.backend import _backend
 
 
 # ----------------------------------------

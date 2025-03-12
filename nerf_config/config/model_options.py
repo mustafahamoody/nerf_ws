@@ -4,29 +4,66 @@ import os
 
 # Get model config path from environment variable - Set in dockerfile
 model_config_path = os.environ.get('MODEL_CONFIG_PATH')
+trainer_config_path = os.environ.get('TRAINER_CONFIG_PATH')
 
 # Check if model config path is set
 if not model_config_path:
     raise EnvironmentError("MODEL_CONFIG_PATH environment variable must be set")
 
+if not trainer_config_path:
+    raise EnvironmentError("TRAINER_CONFIG_PATH environment variable must be set")
 
-#Load model config from model_config.yaml
-with open(model_config_path, 'r') as file:
-    config = yaml.safe_load(file)
+
+# Function to load yaml config files
+def load_config(file_path):
+    """Load YAML configuration file with environment variable expansion."""
+    try:
+        with open(file_path, 'r') as file:
+            config = yaml.safe_load(file)
+
+        def expand_vars(item):
+            if isinstance(item, str):
+                return os.path.expandvars(item)
+            elif isinstance(item, dict):
+                return {key: expand_vars(value) for key, value in item.items()}
+            elif isinstance(item, list):
+                return [expand_vars(elem) for elem in item]
+            else:
+                return item
+
+        config = expand_vars(config)
+        return config
+
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Configuration file not found: {file_path}")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Error parsing YAML configuration file: {e}")
+
+
+# Load yaml config files
+try:
+    config_model = load_config(model_config_path)
+    config_trainer = load_config(trainer_config_path)
+
+except Exception as e:
+    raise
+
 
 # Set nerf config values for inference
-bound = config['model']['bound'] # Default (Axis-ALigned) Bounding Box scale
-scale = config['model']['scale'] # Default scale
-dt_gamma = config['model']['dt_gamma'] # Default dt_gamma
-density_thresh = config['model']['density_thresh'] # Default density threshold
-iters = config['model']['iters'] # Default number of iterations
+bound = config_model['model']['bound'] # Default (Axis-ALigned) Bounding Box scale
+scale = config_model['model']['scale'] # Default scale
+dt_gamma = config_model['model']['dt_gamma'] # Default dt_gamma
+density_thresh = config_model['model']['density_thresh'] # Default density threshold
+iters = config_model['model']['iters'] # Default number of iterations
+path = config_trainer['trainer']['data_path'] # Path to transforms to get camera intrinsics
+
 
 class ModelOptions:
 
     @staticmethod
     def opt():
         parser = argparse.ArgumentParser()
-        # parser.add_argument('path', type=str)
+        parser.add_argument('--path', type=str, default=path)
         parser.add_argument('-O', action='store_true', help="equals --fp16 --cuda_ray --preload", default=True)
         parser.add_argument('--test', action='store_true', help="test mode")
         # parser.add_argument('--workspace', type=str, default='workspace')
@@ -76,4 +113,5 @@ class ModelOptions:
         parser.add_argument('--rand_pose', type=int, default=-1, help="<0 uses no rand pose, =0 only uses rand pose, >0 sample one rand pose every $ known poses")
 
         opt = parser.parse_args()
+        
         return opt

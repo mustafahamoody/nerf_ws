@@ -10,10 +10,10 @@ setup(
     packages=find_packages(include=['occupancy_package', 'occupancy_package.*',]),
     include_package_data=True,
 
-    package_data = {'occupancy_package.libs.raymarching': ['src/*.cu', 'src/*.cpp', 'src/*.h'], 
-                    'occupancy_package.libs.gridencoder': ['src/*.cu', 'src/*.cpp', 'src/*.h'], 
-                    'occupancy_package.libs.gridencoder.freqencoder': ['src/*.cu', 'src/*.cpp', 'src/*.h'],
-                    'occupancy_package.libs.shencoder': ['src/*.cu', 'src/*.cpp', 'src/*.h'],
+    package_data = {'nerf_config.libs.raymarching': ['src/*.cu', 'src/*.cpp', 'src/*.h'], 
+                    'nerf_config.libs.gridencoder': ['src/*.cu', 'src/*.cpp', 'src/*.h'], 
+                    'nerf_config.libs.gridencoder.freqencoder': ['src/*.cu', 'src/*.cpp', 'src/*.h'],
+                    'nerf_config.libs.shencoder': ['src/*.cu', 'src/*.cpp', 'src/*.h'],
                     'occupancy_package.config': ['*.yaml', '*.yml'],
                     'occupancy_package.model_weights.stone_nerf.checkpoints': ['*.pth'],},
 

@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from occupancy_package.libs.raymarching.raymarching import *
+from nerf_config.libs.raymarching.raymarching import *
 from .utils import custom_meshgrid
 
 def sample_pdf(bins, weights, n_samples, det=False):

@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from occupancy_package.libs.nerf.encoding import get_encoder
-from occupancy_package.libs.nerf.activation import trunc_exp
+from nerf_config.libs.nerf.encoding import get_encoder
+from nerf_config.libs.nerf.activation import trunc_exp
 from .renderer import NeRFRenderer
 
 

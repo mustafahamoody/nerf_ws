@@ -91,6 +91,7 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-in
 ENV MODEL_CONFIG_PATH=${WORKSPACE}/nerf_config/model_config.yaml
 ENV TRAINER_CONFIG_PATH=${WORKSPACE}/nerf_config/trainer_config.yaml
 ENV MODEL_WEIGHTS_PATH=${WORKSPACE}/data/stone_nerf
+ENV MODEL_DATA_PATH=${WORKSPACE}/data/stone
 ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # Set a fixed directory for Torch extensions and create it
@@ -100,10 +101,13 @@ RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 # **Set CUDA architecture list explicitly to avoid detection issues**
 ENV TORCH_CUDA_ARCH_LIST="8.6"
 
+# Make nerf_config Files visible to all nodes
+COPY nerf_config ${WORKSPACE}/nerf_config
+ENV PYTHONPATH="${WORKSPACE}/:$PYTHONPATH"
 
 # Precompile Torch extensions by importing the modules that compile them.
 # This step will compile your extensions and store the compiled artifacts in TORCH_EXTENSIONS_DIR.
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source ${WORKSPACE}/install/setup.bash && python3 -c 'import occupancy_package.libs.shencoder; import occupancy_package.libs.gridencoder.grid; import occupancy_package.libs.raymarching.raymarching'"
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source ${WORKSPACE}/install/setup.bash && python3 -c 'import nerf_config.libs.shencoder; import nerf_config.libs.gridencoder.grid; import nerf_config.libs.raymarching.raymarching'"
 
 # Copy the entrypoint script (placed in nerf_ws/docker/entrypoint.sh)
 COPY docker/entrypoint.sh /entrypoint.sh

@@ -57,11 +57,11 @@ def get_encoder(encoding="hashgrid", input_dim=3,
     #     encoder = FreqEncoder(input_dim=input_dim, degree=multires)
 
     elif encoding == 'sphere_harmonics':
-        from occupancy_package.libs.shencoder import SHEncoder
+        from nerf_config.libs.shencoder import SHEncoder
         encoder = SHEncoder(input_dim=input_dim, degree=degree)
 
     elif encoding == 'hashgrid':
-        from occupancy_package.libs.gridencoder.grid import GridEncoder
+        from nerf_config.libs.gridencoder.grid import GridEncoder
         encoder = GridEncoder(input_dim=input_dim, num_levels=num_levels, level_dim=level_dim, base_resolution=base_resolution, log2_hashmap_size=log2_hashmap_size, desired_resolution=desired_resolution, gridtype='hash', align_corners=align_corners)
     
     # elif encoding == 'tiledgrid':
