@@ -39,7 +39,6 @@ def load_config(file_path):
     except yaml.YAMLError as e:
         raise ValueError(f"Error parsing YAML configuration file: {e}")
 
-
 # Load yaml config files
 try:
     config_model = load_config(model_config_path)
