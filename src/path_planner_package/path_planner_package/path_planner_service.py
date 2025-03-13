@@ -16,7 +16,7 @@ from path_planner_package.path_planners.path_planner_RRTstar import rrt_star
 
 path_planner = a_star_cm # Choose Path Planner to use: a_star (A*) or rrt_star (RRT*)
 
-class PathPlannerNode(Node):
+class PathPlannerService(Node):
     def __init__(self):
         super().__init__('path_planner_service')
         
@@ -134,7 +134,7 @@ class PathPlannerNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    planner = PathPlannerNode()
+    planner = PathPlannerService()
     rclpy.spin(planner)
     path_planner.destroy_node()
     rclpy.shutdown()

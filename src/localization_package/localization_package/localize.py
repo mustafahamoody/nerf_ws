@@ -73,7 +73,7 @@ class PoseOptimizer():
         self.fixed_z = fixed_z
 
 
-    def estimate_pose(self, camera_image):
+    def estimate_pose(self, camera_image, x=0.1, y=0.1, yaw=0.05):
         """
         camera_image: RGB image as a numpy array (range 0...255)
         Returns: (x, y, z) translation tuple, yaw (radians), and the loss history.
@@ -98,7 +98,7 @@ class PoseOptimizer():
         interest_idxs = np.argwhere(interest_mask > 0)
 
         # Create optimizable (trainable) pose parameters -- with small non-zero values to avoid local minima
-        pose_params = torch.tensor([0.1, 0.1, self.fixed_z, 0.05], device='cuda', requires_grad=True)
+        pose_params = torch.tensor([x, y, self.fixed_z, yaw], device='cuda', requires_grad=True)
 
         # Use Adam optimizer for poses
         optimizer = torch.optim.Adam([pose_params], lr=self.learning_rate)
@@ -279,7 +279,7 @@ def load_config(file_path):
 ########################### END Load NERF Model Config. ###########################
 
 
-class localize():
+class Localize():
     def __init__(self):
         # Get config paths from environment variables with error checking
         model_config_path = os.environ.get('MODEL_CONFIG_PATH')
@@ -335,11 +335,11 @@ class localize():
         self.get_rays_fn = lambda pose: get_rays(pose, self.dataset.intrinsics, self.dataset.H, self.dataset.W)  # Function to Generate Render rays
 
 
-    def run(self, camera_image):
+    def run(self, camera_image, x, y, z, yaw):
         optimizer = PoseOptimizer(self.render_fn, self.get_rays_fn, learning_rate=0.005,
                                             n_iters=1000, render_viz=True)
         
-        result = optimizer.estimate_pose(camera_image) # Run Pose Optimizer on Image
+        result = optimizer.estimate_pose(camera_image, x, y, z, yaw) # Run Pose Optimizer on Image
         
         if result is not None:
             final_translation, final_yaw, losses = result
@@ -354,6 +354,6 @@ camera_image = cv2.imread("1.png")
 
 # camera_image = cv2.cvtColor(camera_image, cv2.COLOR_BGR2RGB)
 
-localize().run(camera_image)
+Localize().run(camera_image)
 
             
