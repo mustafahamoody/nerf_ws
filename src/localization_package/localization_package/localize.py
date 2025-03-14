@@ -73,7 +73,7 @@ class PoseOptimizer():
         self.fixed_z = fixed_z
 
 
-    def estimate_pose(self, camera_image, x=0.1, y=0.1, yaw=0.05):
+    def estimate_pose(self, camera_image, x=0.1, y=0.1, z=0.1, yaw=0.05):
         """
         camera_image: RGB image as a numpy array (range 0...255)
         Returns: (x, y, z) translation tuple, yaw (radians), and the loss history.
@@ -98,7 +98,7 @@ class PoseOptimizer():
         interest_idxs = np.argwhere(interest_mask > 0)
 
         # Create optimizable (trainable) pose parameters -- with small non-zero values to avoid local minima
-        pose_params = torch.tensor([x, y, self.fixed_z, yaw], device='cuda', requires_grad=True)
+        pose_params = torch.tensor([x, y, z, yaw], device='cuda', requires_grad=True)
 
         # Use Adam optimizer for poses
         optimizer = torch.optim.Adam([pose_params], lr=self.learning_rate)
