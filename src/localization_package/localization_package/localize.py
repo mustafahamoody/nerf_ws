@@ -30,7 +30,7 @@ def find_keypoints(camera_image, render=False):
 
     # Use Scale-Invariant Feature Transform (SIFT) to detect keypoints
     sift = cv2.SIFT_create()
-    keypoints = sift.detect(image, None)
+    keypoints = sift.detect(image_gray, None)
 
     if render:
         # Draw keypoints on image
@@ -72,8 +72,13 @@ class PoseOptimizer():
         self.render_viz = render_viz
         self.fixed_z = fixed_z
 
+        self.optimizer_params = {
+            'lr': learning_rate,
+            'betas': (0.9, 0.999)  # Add momentum with Adam's default betas
+        }
 
-    def estimate_pose(self, camera_image, x=0.1, y=0.1, z=0.1, yaw=0.05):
+
+    def estimate_pose(self, camera_image, x, y, z, yaw):
         """
         camera_image: RGB image as a numpy array (range 0...255)
         Returns: (x, y, z) translation tuple, yaw (radians), and the loss history.
@@ -101,9 +106,18 @@ class PoseOptimizer():
         pose_params = torch.tensor([x, y, z, yaw], device='cuda', requires_grad=True)
 
         # Use Adam optimizer for poses
-        optimizer = torch.optim.Adam([pose_params], lr=self.learning_rate)
-        # Add learning rate schediler for better converence
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.995)
+        optimizer = torch.optim.Adam([pose_params], **self.optimizer_params)
+        
+        # More aggressive cyclicallearning rate scheduler to help escape local minima
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            optimizer,
+            max_lr=self.learning_rate * 10,  # Much higher peak LR
+            total_steps=self.n_iters,
+            pct_start=0.5,  # Spend 30% of iterations ramping up
+            cycle_momentum=True,
+            div_factor=25.0,  # Initial LR will be max_lr/25
+            final_div_factor=1000.0  # Final LR will be max_lr/1000
+        )
 
         # Tracking loss history
         losses = []
@@ -184,12 +198,27 @@ class PoseOptimizer():
             loss = torch.nn.functional.mse_loss(rendered_rgb, camera_rgb)
 
             # Add small regularization term -- Weight Decay 
-            reg_factor = 0.001
+            reg_factor = 1e-5
             reg_loss = reg_factor * torch.sum(pose_params**2)
             total_loss = loss + reg_loss
 
             # Backpropagate
             total_loss.backward()
+
+            # Apply a more aggressive update for one step -- Every 50 iterations
+            if iter % 50 == 0: 
+                with torch.no_grad():
+                    # Scale up the gradients for one step
+                    pose_params.grad *= 5.0
+
+            # Add random noise to the parameters to escape local minima -- Every 100 iterations
+            if iter % 100 == 0:
+                with torch.no_grad():
+                    # Add random noise to parameters
+                    noise_scale = 0.1 * (1 - iter/self.n_iters)  # Decreasing noise over time
+                    noise = torch.randn_like(pose_params) * noise_scale
+                    pose_params.add_(noise)
+                    print(f"Added noise of scale {noise_scale} to parameters")
 
             # # Print gradients before stepping the optimizer
             # print(f"Gradients for pose_params: {pose_params.grad}")
@@ -201,12 +230,14 @@ class PoseOptimizer():
             # Store loss
             losses.append(loss.item())
 
-            # Print Progress -- Dynamically Update Print
-            if iter <= 3 or iter % 50 == 0:
-                print(f"Iteration {iter}, Loss: {loss.item()}")
+            # Print Progress
+            if iter <= 3 or iter % 100 == 0:
+                print(f"--------------------------Iteration {iter}, Loss: {loss.item()}--------------------------")
+                print(f"Current Learning rate: {scheduler.get_last_lr()[0]}")
                 # print(f"Current params: {pose_params.data}")
+                # print(f"Gradients: {pose_params.grad}")
 
-            if self.render_viz and (iter <= 3 or iter % 100 == 0):
+            if self.render_viz and (iter == 1 or iter % 20 == 0):
                 # Render full image and save to render_viz folder for visualization
                 with torch.no_grad():
                     full_rays = self.get_rays(pose_matrix)
@@ -225,21 +256,21 @@ class PoseOptimizer():
                 plt.tight_layout()
 
                 # Save to file
-                viz_path = os.path.join(render_dir, f'localization_iter_{iter}.png')
+                viz_path = os.path.join(render_dir, f'localization_iter.png')
                 plt.savefig(viz_path)
                 print(f"Visualization saved to {viz_path}")
                 plt.close()
 
 
         # Extract final values
-        x, y, z, yaw = [p.iten() for p in pose_params]
+        x, y, z, yaw = [p.item() for p in pose_params]
 
         # Create final pose matrix
         cos_y = np.cos(yaw)
         sin_y = np.sin(yaw)
         
         final_pose = np.eye(4)
-        final_pose[0, 0] = cos_y
+        final_pose[0, 0] = -cos_y
         final_pose[0, 1] = -sin_y
         final_pose[1, 0] = sin_y
         final_pose[1, 1] = cos_y
@@ -335,9 +366,13 @@ class Localize():
         self.get_rays_fn = lambda pose: get_rays(pose, self.dataset.intrinsics, self.dataset.H, self.dataset.W)  # Function to Generate Render rays
 
 
-    def run(self, camera_image, x, y, z, yaw):
-        optimizer = PoseOptimizer(self.render_fn, self.get_rays_fn, learning_rate=0.005,
-                                            n_iters=1000, render_viz=True)
+    def run(self, camera_image, x=1, y=1, z=1, yaw=0.5):
+        optimizer = PoseOptimizer(self.render_fn, 
+                                  self.get_rays_fn, 
+                                  learning_rate=3.0,
+                                  n_iters=1000,
+                                  batch_size=8192,
+                                  render_viz=True)
         
         result = optimizer.estimate_pose(camera_image, x, y, z, yaw) # Run Pose Optimizer on Image
         
@@ -351,9 +386,6 @@ class Localize():
 ################## TEST ##################
 # Load your sensor image (ensure it is in RGB).
 camera_image = cv2.imread("1.png")
-
-# camera_image = cv2.cvtColor(camera_image, cv2.COLOR_BGR2RGB)
+camera_image = cv2.cvtColor(camera_image, cv2.COLOR_BGR2RGB)
 
 Localize().run(camera_image)
-
-            
