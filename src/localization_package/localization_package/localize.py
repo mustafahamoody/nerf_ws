@@ -12,41 +12,171 @@ from nerf_config.libs.nerf.network import NeRFNetwork
 from nerf_config.config.model_options import ModelOptions
 
 
-# Image Keypoints detector using SIFT
-def find_keypoints(camera_image, render=False):
+# # Image Keypoints detector using SIFT
+# def find_keypoints(camera_image, render=False):
+#     image = np.copy(camera_image)
+
+#     if image is None:
+#         print("No Image Recieved")
+#     # else:
+#     #     print(f'-------------------------------{image.shape, image.dtype}-------------------------------')
+
+#     if image.dtype != 'uint8':
+#         # Normalize to [0, 255] and convert to uint8
+#         image = cv2.convertScaleAbs(image, alpha=(255.0 / np.max(image)))
+    
+#     # Convert image to grayscale -- SIFT works best with grayscale images
+#     image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+#     # Use Scale-Invariant Feature Transform (SIFT) to detect keypoints
+#     sift = cv2.SIFT_create()
+#     keypoints = sift.detect(image_gray, None)
+
+#     if render:
+#         # Draw keypoints on image
+#         feature_image = cv2.drawKeypoints(image_gray, keypoints, image)
+#     else:
+#         feature_image = None
+
+#     # Extract (x,y) coords. of keypoints on the image (as a numpy int array)
+#     keypoint_coords = np.array([keypoint.pt for keypoint in keypoints]).astype(int)
+    
+#     # Remove duplicate keypoints
+#     keypoint_coords = np.unique(keypoint_coords, axis=0)
+
+#     extras = {'features': feature_image}
+
+#     return keypoint_coords, extras
+
+# ----------------------------------------------------------------------------------------
+
+def find_keypoints(camera_image, max_keypoints=10000, render=False):
+    # Extract keypoints using ORB (Oriented FAST and Rotated BRIEF).
     image = np.copy(camera_image)
 
-    if image is None:
-        print("No Image Recieved")
-    # else:
-    #     print(f'-------------------------------{image.shape, image.dtype}-------------------------------')
-
+    # Make sure image is correct datatype for processing
     if image.dtype != 'uint8':
-        # Normalize to [0, 255] and convert to uint8
         image = cv2.convertScaleAbs(image, alpha=(255.0 / np.max(image)))
     
-    # Convert image to grayscale -- SIFT works best with grayscale images
+    # Convert to grayscale
     image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
-    # Use Scale-Invariant Feature Transform (SIFT) to detect keypoints
-    sift = cv2.SIFT_create()
-    keypoints = sift.detect(image_gray, None)
+    # Create ORB detector
+    orb = cv2.ORB_create(nfeatures=max_keypoints)
 
+    # Find keypoints and descriptors
+    keypoints, descriptors = orb.detectAndCompute(image_gray, None)
+    
     if render:
         # Draw keypoints on image
-        feature_image = cv2.drawKeypoints(image_gray, keypoints, image)
+        feature_image = cv2.drawKeypoints(image, keypoints, None, color=(0, 255, 0), 
+                                         flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     else:
         feature_image = None
-
-    # Extract (x,y) coords. of keypoints on the image (as a numpy int array)
+    
+    # Extract keypoint coordinates
     keypoint_coords = np.array([keypoint.pt for keypoint in keypoints]).astype(int)
     
-    # Remove duplicate keypoints
+    # Remove duplicates
     keypoint_coords = np.unique(keypoint_coords, axis=0)
-
-    extras = {'features': feature_image}
-
+    
+    extras = {
+        'features': feature_image,
+        'descriptors': descriptors
+    }
+    
     return keypoint_coords, extras
+
+
+# def find_keypoints_superpoint(camera_image, max_keypoints=1000, render=False):
+#     # Extract keypoints using SuperPoint.
+#     image = np.copy(camera_image)
+
+#     # Make sure image is correct datatype for processing
+#     if image.dtype != 'uint8':
+#         image = cv2.convertScaleAbs(image, alpha=(255.0 / np.max(image)))
+
+#     # Convert image to grayscale, normalize and conver to tensor
+#     image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+#     image_tensor = torch.from_numpy(image_gray).float() / 255.0
+#     image_tensor = image_tensor.unsqueeze(0).unsqueeze(0).to('cuda')
+
+#     # Load SuperPoint model
+#     superpoint = SuperPoint({
+#         'descriptor_dim': 256,
+#         'nms_radius': 4,
+#         'keypoint_threshold': 0.005,
+#         'max_keypoints': max_keypoints
+#     }).to('cuda')
+
+#     # Extract Keypoints
+#     with torch.no_grad():
+#         pred = superpoint({'image': image_tensor})
+
+#     # convert to numpy
+#     keypoints = pred['keypoints'][0].cpu().numpy()
+#     scores = pred['scores'][0].cpu().numpy()
+#     discriptors = pred['descriptors'][0].cpu().numpy()
+
+#     # Sort by score and keep top max_keypoints
+#     indices = np.argsort(scores)[::-1][:max_keypoints]
+#     keypoints = keypoints[indices]
+#     descriptors = descriptors[:, indices]
+
+#     if render:
+#         # Draw keypoints on image
+#         feature_image = np.copy(image)
+#         for kp in keypoints:
+#             cv2.circle(feature_image, (int(kp[0]), int(kp[1])), 3, (0, 255, 0), -1)
+#     else:
+#         feature_image = None
+    
+#     # Convert to integers
+#     keypoint_coords = keypoints.astype(int)
+    
+#     extras = {
+#         'features': feature_image,
+#         'descriptors': descriptors
+#     }
+    
+#     return keypoint_coords, extras
+
+
+# def find_keypoints(camera_image, max_keypoints=1000, render=False):
+#     # Extract keypoints using both ORB and SuperPoint.
+
+#     # Get ORB keypoints
+#     orb_keypoints, orb_extras = find_keypoints_orb(camera_image, max_keypoints=max_keypoints, render=False) 
+    
+#     # Try to get SuperPoint keypoints
+#     try:
+#         sp_keypoints, sp_extras = find_keypoints_superpoint(camera_image, max_keypoints=max_keypoints, render=render)
+#         if sp_keypoints is not None:
+#             # Combine keypoints
+#             keypoints = np.vstack([orb_keypoints, sp_keypoints])
+
+#             # remove duplicates
+#             keypoints = np.unique(keypoints, axis=0)
+#         else:
+#             keypoints = orb_keypoints
+    
+#     except:
+#         print("SuperPoint unavailable: Using only ORB features")
+#         keypoints = orb_keypoints
+
+#     if render:
+#         # Draw keypoints on image
+#         feature_image = np.copy(camera_image)
+#         for kp in keypoints:
+#             cv2.circle(feature_image, (int(kp[0]), int(kp[1])), 3, (0, 255, 0), -1)
+#     else:
+#         feature_image = None
+    
+#     extras = {'features': feature_image}
+    
+#     return keypoints, extras
+
+
 
 
 # Pose Coordinate Optimizer using NeRF
@@ -198,7 +328,7 @@ class PoseOptimizer():
             loss = torch.nn.functional.mse_loss(rendered_rgb, camera_rgb)
 
             # Add small regularization term -- Weight Decay 
-            reg_factor = 1e-5
+            reg_factor = 0.01
             reg_loss = reg_factor * torch.sum(pose_params**2)
             total_loss = loss + reg_loss
 
@@ -237,7 +367,8 @@ class PoseOptimizer():
                 # print(f"Current params: {pose_params.data}")
                 # print(f"Gradients: {pose_params.grad}")
 
-            if self.render_viz and (iter == 1 or iter % 20 == 0):
+
+            if self.render_viz and (iter == 1 or iter % 100 == 0):
                 # Render full image and save to render_viz folder for visualization
                 with torch.no_grad():
                     full_rays = self.get_rays(pose_matrix)
@@ -369,9 +500,9 @@ class Localize():
     def run(self, camera_image, x=1, y=1, z=1, yaw=0.5):
         optimizer = PoseOptimizer(self.render_fn, 
                                   self.get_rays_fn, 
-                                  learning_rate=3.0,
-                                  n_iters=1000,
-                                  batch_size=8192,
+                                  learning_rate=2.0,
+                                  n_iters=500,
+                                  batch_size=2048,
                                   render_viz=True)
         
         result = optimizer.estimate_pose(camera_image, x, y, z, yaw) # Run Pose Optimizer on Image
