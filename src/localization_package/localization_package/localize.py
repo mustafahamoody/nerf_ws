@@ -387,7 +387,8 @@ class PoseOptimizer():
                 plt.tight_layout()
 
                 # Save to file
-                viz_path = os.path.join(render_dir, f'localization_iter.png')
+                viz_path = os.path.join(render_dir, f'localization_iter_{iter}.png')
+                viz_path = os.path.join(render_dir, f'localization_stream.png')
                 plt.savefig(viz_path)
                 print(f"Visualization saved to {viz_path}")
                 plt.close()
@@ -402,8 +403,8 @@ class PoseOptimizer():
         
         final_pose = np.eye(4)
         final_pose[0, 0] = -cos_y
-        final_pose[0, 1] = -sin_y
-        final_pose[1, 0] = sin_y
+        final_pose[0, 1] = sin_y
+        final_pose[1, 0] = -sin_y
         final_pose[1, 1] = cos_y
         final_pose[0, 3] = x
         final_pose[1, 3] = y
@@ -516,7 +517,8 @@ class Localize():
       
 ################## TEST ##################
 # Load your sensor image (ensure it is in RGB).
-camera_image = cv2.imread("1.png")
+camera_image = cv2.imread("10.png")
 camera_image = cv2.cvtColor(camera_image, cv2.COLOR_BGR2RGB)
+camera_image = np.flipud(camera_image)  # Flip image vertically
 
 Localize().run(camera_image)
