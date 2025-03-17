@@ -22,8 +22,8 @@ class PathPlannerNode(Node):
         super().__init__('path_planner_node')
         
         # Set start and goal positions
-        self.start = (0.0, -0.9) 
-        self.goal = (0.9, 0.9)
+        self.start = (-0.5, -0.9)  # (y, x)
+        self.goal = (0.9, 0.9)  # (y, x)
 
         # Only publish path once
         self.publish_once = False

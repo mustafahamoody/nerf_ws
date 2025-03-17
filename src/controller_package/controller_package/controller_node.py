@@ -14,8 +14,8 @@ class ControllerNode(Node):
         super().__init__('controller_node')
 
         # Set start and goal positions
-        self.start = (0.0, -0.9)
-        self.goal = (-0.9, 0.9)
+        self.start = (-0.5, -0.9)  # (y, x)
+        self.goal = (0.9, 0.9)  # (y, x)
 
         # Service Client to request path from path planner
         self.client = self.create_client(GetPlan, 'get_path')
